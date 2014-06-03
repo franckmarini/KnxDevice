@@ -1,7 +1,7 @@
 #include <KnxDevice.h>
 #include <Cli.h> // command line interpreter lib available at https://github.com/franckmarini/Cli
 
-Cli cli = Cli(&Serial);
+Cli cli = Cli(Serial);
 
 void KNX_DPT_1_001_Tests(void); // 1 bit COM OBJ tests (1.001 B1 DPT_Switch)
 void KNX_DPT_4_001_Tests(void); // 1 byte COM OBJ tests (4.001 A8 DPT_Char_ASCII)

@@ -1,7 +1,7 @@
 #include <KnxDevice.h>
 #include <Cli.h> // command line interpreter lib available at https://github.com/franckmarini/Cli
 
-Cli cli = Cli(&Serial);
+Cli cli = Cli(Serial);
 
 void PriorityTests(void);
 void RepeatTests(void);
