@@ -34,6 +34,17 @@
 // DEBUG :
 // #define KNXDEVICE_DEBUG_INFO   // Uncomment to activate info traces
 
+// Macro functions for conversion of physical and 2/3 level group addresses
+inline word P_ADDR(byte area, byte line, byte busdevice)
+{ return (word) ( ((area&0xF)<<12) + ((line&0xF)<<8) + busdevice ); }
+
+inline word G_ADDR(byte maingrp, byte midgrp, byte subgrp)
+{ return (word) ( ((maingrp&0x1F)<<11) + ((midgrp&0x3)<<8) + subgrp ); }
+
+inline word G_ADDR(byte maingrp, byte subgrp)
+{ return (word) ( ((maingrp&0x1F)<<11) + subgrp ); }
+
+
 // Values returned by the KnxDevice member functions :
 #define KNX_DEVICE_OK                            0
 #define KNX_DEVICE_ERROR                       255
