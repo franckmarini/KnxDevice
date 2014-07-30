@@ -57,6 +57,7 @@ byte KnxDevice::begin(HardwareSerial& serial, word physicalAddr)
 {
   _tpuart = new KnxTpUart(serial ,physicalAddr, NORMAL);
   _rxTelegram = &_tpuart->GetReceivedTelegram();
+  delay(10000); // delay 10s. Workaround for init issue in case the Arduino is powered by the bus
   if(_tpuart->Reset()!= KNX_TPUART_OK)
   {
     delete(_tpuart);
