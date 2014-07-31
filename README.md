@@ -1,6 +1,7 @@
 # KNX Bus Device library for Arduino
 
 ## Links :
+- [Blog](http://www.liwan.fr/KnxWithArduino/)
 - [GitHub Page](http://franckmarini.github.io/KnxDevice)
 - [KNX Association](http://www.knx.org)
 - [Siemens KNX chipsets](http://www.buildingtechnologies.siemens.com/bt/global/en/buildingautomation-hvac/gamma-building-control/gamma-b2b/Pages/transceivers.aspx)
@@ -113,7 +114,7 @@ void knxEvents(byte index) {
 //  ...
 
     default:
-      // code to treat all updates
+      // code to treat remaining objects updates
       break;
   }
 };
