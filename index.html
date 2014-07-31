@@ -35,6 +35,14 @@
 <a name="knx-bus-device-library-for-arduino" class="anchor" href="#knx-bus-device-library-for-arduino"><span class="octicon octicon-link"></span></a>KNX Bus Device library for Arduino</h1>
 
 <h2>
+<a name="links-" class="anchor" href="#links-"><span class="octicon octicon-link"></span></a>Links :</h2>
+
+<ul>
+<li><a href="http://www.liwan.fr/KnxWithArduino/">Blog</a></li>
+<li><a href="http://franckmarini.github.io/KnxDevice">GitHub Page</a></li>
+<li><a href="http://www.knx.org">KNX Association</a></li>
+<li><a href="http://www.buildingtechnologies.siemens.com/bt/global/en/buildingautomation-hvac/gamma-building-control/gamma-b2b/Pages/transceivers.aspx">Siemens KNX chipsets</a></li>
+</ul><h2>
 <a name="presentation-" class="anchor" href="#presentation-"><span class="octicon octicon-link"></span></a>Presentation :</h2>
 
 <p>KNX is an open communication protocol standard for intelligent buildings.</p>
@@ -46,7 +54,7 @@ To avoid spending energy on electronic stuff, the easiest way (I chose) is to us
 <p>You also need to know a few things about the KNX system, in particular about KNX communication.
 There are plenty of information on the web, or you can also read the "KNX Basic Course Documentation" book, available on the knx online shop (<a href="http://www.knx.org">www.knx.org</a>), which offers a complete technical overview of the KNX system.</p>
 
-<p>Why to create its own KNX devices ? First this library is intended for hobbyists only. It allows you to create something funny and fully customized. The main drawback is that your self-made device can not be configured using ETS, the KNX software allowing KNX installation commissionning. I hope to make this library as reliable as possible (you can help me in this task!) even if its use remains at your own risks. I have planed to use self-made bus devices in my future own KNX home installation.</p>
+<p>Why to create its own KNX devices ? First this library is intended for hobbyists only. It allows you to create something funny and fully customized. The main drawback is that your self-made device can not be configured using ETS, the KNX software allowing KNX installation commissionning. I hope to make this library as reliable as possible (you can help me in this task!) even if <strong>its use remains at your own risks.</strong> I'm still confident enough and plan to use self-made bus devices in my future own KNX home installation.</p>
 
 <h2>
 <a name="hardware-" class="anchor" href="#hardware-"><span class="octicon octicon-link"></span></a>Hardware :</h2>
@@ -171,7 +179,7 @@ void knxEvents(byte index) {
 //  ...
 
     default:
-      // code to treat all updates
+      // code to treat remaining objects updates
       break;
   }
 };
