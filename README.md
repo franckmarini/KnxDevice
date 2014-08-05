@@ -6,9 +6,13 @@
 - [KNX Association](http://www.knx.org)
 - [Siemens KNX chipsets](http://www.buildingtechnologies.siemens.com/bt/global/en/buildingautomation-hvac/gamma-building-control/gamma-b2b/Pages/transceivers.aspx)
 
+## Realization examples :
+- Prototype of Basic push button device  (watch the demo in the [Blog](http://www.liwan.fr/KnxWithArduino/))
+- Prototype of Green Light actuator device 
+
+NB : The source code is available in the "examples" folder.
 
 ## Presentation :
-
 KNX is an open communication protocol standard for intelligent buildings.
 
 This library allows you to create your "self-made" KNX bus device.
@@ -43,21 +47,21 @@ This library is still under developpement. The next actions in the pipe are :
 
 ## API
 ### 1/ Define the communication objects
-First of all, the API allows you to define the KNX communication objects of your bus device. For each object, define its group address its gets linked to, its datapoint type, and its flags. Theoritically, you can define up to 256 objects, even if in practical you are limited by the quantity of RAM (it would be worth measuring the max allowed number of objects depending on the memory available).
+First of all, define the KNX communication objects of your bus device. For each object, define its group address its gets linked to, its datapoint type, and its flags. Theoritically, you can define up to 256 objects, even if in practical you are limited by the quantity of RAM (it would be worth measuring the max allowed number of objects depending on the memory available).
 
 **`KnxComObject KnxDevice::_comObjectsList[];`**
 
 * **Description:** list of the communication objects (group objects) that are attached to your KNX device. Define this variable in your Arduino sketch (but outside all function bodies).
-* **Parameters:** for each object in the list, you shall provide the address (word), the datapoint type (see _e_KnxDPT_ID_ enum in "KnxDPT.h" file), and the flags (byte, see "KnxComObject.h" for more details). 
+* **Parameters:** for each object in the list, you shall provide the group address (word, use G_ADDR() function), the datapoint type (check "_e_KnxDPT_ID_" enum in [KnxDPT.h](https://github.com/franckmarini/KnxDevice/blob/master/KnxDPT.h) file), and the flags (byte, check [KnxComObject.h](https://github.com/franckmarini/KnxDevice/blob/master/KnxComObject.h) for more details). 
 * **Example:** 
 ```
 // Definition of the Communication Objects attached to the device
 KnxComObject KnxDevice::_comObjectsList[] =
 {
-//             	adress,			DataPoint ID,						flags			} ,
-/* Index 0  */ { G_ADDR(0,0,1),		KNX_DPT_1_001 /* 1.001 B1 DPT_Switch */ ,		COM_OBJ_LOGIC_IN_INIT	} ,
-/* Index 1  */ { G_ADDR(0.0.2),		KNX_DPT_5_010 /* 5.010 U8 DPT_Value_1_Ucount */ ,	COM_OBJ_SENSOR		} ,
-/* Index 2  */ { G_ADDR(0,0,0xA),       KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,		0x30 /* C+R */		} ,
+//             	adress,			                         DataPoint ID,						                flags			} ,
+/* Index 0  */ { G_ADDR(0,0,1) /* addr 0.0.1 */,		  KNX_DPT_1_001 /* 1.001 B1 DPT_Switch */ ,	          COM_OBJ_LOGIC_IN_INIT	} ,
+/* Index 1  */ { G_ADDR(0,0,2) /* addr 0.0.2 */,		  KNX_DPT_5_010 /* 5.010 U8 DPT_Value_1_Ucount */ ,	  COM_OBJ_SENSOR		} ,
+/* Index 2  */ { G_ADDR(0,0,0xA) /* addr 0.0.A */,        KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,		      0x30 /* C+R */		} ,
 };
 ```
 ___
@@ -68,7 +72,7 @@ ___
 ___
 **`byte begin(HardwareSerial& serial, word physicalAddr);`**
 * **Description:**  Start the KNX Device. Place this function call in the setup() function of your Arduino sketch
-* **Parameters :** "serial" is the Hardware serial port connected to the TPUART. "physicalAddr" is the physical address of your device.
+* **Parameters :** "serial" is the Hardware serial port connected to the TPUART. "physicalAddr" is the physical address of your device (use P_ADDR() function).
 * **Return value :** return KNX_DEVICE_ERROR (255) if begin() failed, else return KNX_DEVICE_OK
 * **Example:** 
 ```
