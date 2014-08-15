@@ -43,12 +43,20 @@
 <li><a href="http://www.knx.org">KNX Association</a></li>
 <li><a href="http://www.buildingtechnologies.siemens.com/bt/global/en/buildingautomation-hvac/gamma-building-control/gamma-b2b/Pages/transceivers.aspx">Siemens KNX chipsets</a></li>
 </ul><h2>
+<a name="realization-examples-" class="anchor" href="#realization-examples-"><span class="octicon octicon-link"></span></a>Realization examples :</h2>
+
+<ul>
+<li>Prototype of Basic push button device  (watch the demo in the <a href="http://www.liwan.fr/KnxWithArduino/">Blog</a>)</li>
+<li>Prototype of Green Light actuator device </li>
+</ul><p>NB : The source code is available in the "examples" folder.</p>
+
+<h2>
 <a name="presentation-" class="anchor" href="#presentation-"><span class="octicon octicon-link"></span></a>Presentation :</h2>
 
 <p>KNX is an open communication protocol standard for intelligent buildings.</p>
 
 <p>This library allows you to create your "self-made" KNX bus device.
-For that, you need an arduino hardware and a Siemens TPUART chipset for the physical coupling to the KNX bus (see hardware section below).
+For that, you need an arduino hardware and a Siemens TPUART chipset for the physical coupling to the KNX bus (see hardware section below)... and of course a home KNX installation (or at least a prototyped one like I have while my real one -and the attached house- is being delivered)!
 To avoid spending energy on electronic stuff, the easiest way (I chose) is to use an electronic board with the TPUART already integrated : I used a "TPUART2 test Board BTM2-PCB" that I bought from <a href="http://www.opternus.com">http://www.opternus.com</a>. Or a Siemens bus coupler should also be OK even if I have not tested it. Or why not create a new PCB with both Arduino and TPUART integrated (any motivated person?).</p>
 
 <p>You also need to know a few things about the KNX system, in particular about KNX communication.
@@ -87,7 +95,7 @@ But its drawback is the presense of one serial only, meaning you cannot debug wh
 <h3>
 <a name="1-define-the-communication-objects" class="anchor" href="#1-define-the-communication-objects"><span class="octicon octicon-link"></span></a>1/ Define the communication objects</h3>
 
-<p>First of all, the API allows you to define the KNX communication objects of your bus device. For each object, define its group address its gets linked to, its datapoint type, and its flags. Theoritically, you can define up to 256 objects, even if in practical you are limited by the quantity of RAM (it would be worth measuring the max allowed number of objects depending on the memory available).</p>
+<p>First of all, define the KNX communication objects of your bus device. For each object, define its group address its gets linked to, its datapoint type, and its flags. Theoritically, you can define up to 256 objects, even if in practical you are limited by the quantity of RAM (it would be worth measuring the max allowed number of objects depending on the memory available).</p>
 
 <p><strong><code>KnxComObject KnxDevice::_comObjectsList[];</code></strong></p>
 
@@ -95,16 +103,16 @@ But its drawback is the presense of one serial only, meaning you cannot debug wh
 <li>
 <strong>Description:</strong> list of the communication objects (group objects) that are attached to your KNX device. Define this variable in your Arduino sketch (but outside all function bodies).</li>
 <li>
-<strong>Parameters:</strong> for each object in the list, you shall provide the address (word), the datapoint type (see <em>e_KnxDPT_ID</em> enum in "KnxDPT.h" file), and the flags (byte, see "KnxComObject.h" for more details). </li>
+<strong>Parameters:</strong> for each object in the list, you shall provide the group address (word, use G_ADDR() function), the datapoint type (check "<em>e_KnxDPT_ID</em>" enum in <a href="https://github.com/franckmarini/KnxDevice/blob/master/KnxDPT.h">KnxDPT.h</a> file), and the flags (byte, check <a href="https://github.com/franckmarini/KnxDevice/blob/master/KnxComObject.h">KnxComObject.h</a> for more details). </li>
 <li>
 <strong>Example:</strong> </li>
 </ul><pre><code>// Definition of the Communication Objects attached to the device
 KnxComObject KnxDevice::_comObjectsList[] =
 {
-//              adress,         DataPoint ID,                       flags           } ,
-/* Index 0  */ { G_ADDR(0,0,1),     KNX_DPT_1_001 /* 1.001 B1 DPT_Switch */ ,       COM_OBJ_LOGIC_IN_INIT   } ,
-/* Index 1  */ { G_ADDR(0.0.2),     KNX_DPT_5_010 /* 5.010 U8 DPT_Value_1_Ucount */ ,   COM_OBJ_SENSOR      } ,
-/* Index 2  */ { G_ADDR(0,0,0xA),       KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,        0x30 /* C+R */      } ,
+//              adress,                                  DataPoint ID,                                      flags           } ,
+/* Index 0  */ { G_ADDR(0,0,1) /* addr 0.0.1 */,          KNX_DPT_1_001 /* 1.001 B1 DPT_Switch */ ,           COM_OBJ_LOGIC_IN_INIT } ,
+/* Index 1  */ { G_ADDR(0,0,2) /* addr 0.0.2 */,          KNX_DPT_5_010 /* 5.010 U8 DPT_Value_1_Ucount */ ,   COM_OBJ_SENSOR        } ,
+/* Index 2  */ { G_ADDR(0,0,0xA) /* addr 0.0.A */,        KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,            0x30 /* C+R */        } ,
 };
 </code></pre>
 
@@ -122,7 +130,7 @@ KnxComObject KnxDevice::_comObjectsList[] =
 <li>
 <strong>Description:</strong>  Start the KNX Device. Place this function call in the setup() function of your Arduino sketch</li>
 <li>
-<strong>Parameters :</strong> "serial" is the Hardware serial port connected to the TPUART. "physicalAddr" is the physical address of your device.</li>
+<strong>Parameters :</strong> "serial" is the Hardware serial port connected to the TPUART. "physicalAddr" is the physical address of your device (use P_ADDR() function).</li>
 <li>
 <strong>Return value :</strong> return KNX_DEVICE_ERROR (255) if begin() failed, else return KNX_DEVICE_OK</li>
 <li>
