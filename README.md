@@ -16,7 +16,7 @@ NB : The source code is available in the "examples" folder.
 KNX is an open communication protocol standard for intelligent buildings.
 
 This library allows you to create your "self-made" KNX bus device.
-For that, you need an arduino hardware and a Siemens TPUART chipset for the physical coupling to the KNX bus (see hardware section below).
+For that, you need an arduino hardware and a Siemens TPUART chipset for the physical coupling to the KNX bus (see hardware section below)... and of course a home KNX installation (or at least a prototyped one like I have while my real one -and the attached house- is being delivered)!
 To avoid spending energy on electronic stuff, the easiest way (I chose) is to use an electronic board with the TPUART already integrated : I used a "TPUART2 test Board BTM2-PCB" that I bought from http://www.opternus.com. Or a Siemens bus coupler should also be OK even if I have not tested it. Or why not create a new PCB with both Arduino and TPUART integrated (any motivated person?).
 
 You also need to know a few things about the KNX system, in particular about KNX communication.
