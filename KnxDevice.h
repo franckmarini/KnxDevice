@@ -39,7 +39,7 @@ inline word P_ADDR(byte area, byte line, byte busdevice)
 { return (word) ( ((area&0xF)<<12) + ((line&0xF)<<8) + busdevice ); }
 
 inline word G_ADDR(byte maingrp, byte midgrp, byte subgrp)
-{ return (word) ( ((maingrp&0x1F)<<11) + ((midgrp&0x3)<<8) + subgrp ); }
+{ return (word) ( ((maingrp&0x1F)<<11) + ((midgrp&0x7)<<8) + subgrp ); }
 
 inline word G_ADDR(byte maingrp, byte subgrp)
 { return (word) ( ((maingrp&0x1F)<<11) + subgrp ); }
