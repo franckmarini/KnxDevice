@@ -7,8 +7,7 @@
 - [Siemens KNX chipsets](http://www.buildingtechnologies.siemens.com/bt/global/en/buildingautomation-hvac/gamma-building-control/gamma-b2b/Pages/transceivers.aspx)
 
 ## Realization examples :
-- Prototype of Basic push button device  (watch the demo in the [Blog](http://www.liwan.fr/KnxWithArduino/))
-- Prototype of Green Light actuator device 
+- See the Realizations page in the [Blog](http://www.liwan.fr/KnxWithArduino/).
 
 NB : The source code is available in the "examples" folder.
 
@@ -40,10 +39,15 @@ That's why, for the development of the software library, I have used the Arduino
 
 ## Roadmap :
 This library is still under developpement. The next actions in the pipe are :
-- create a blog to better demonstrate examples and new device realizations, and share ideas
+- Enrich the blog (you help is welcome :-)) to better demonstrate examples and new device realizations, and share ideas
 - create a version with reduced power consumption 
-- add large com objects support (the API is actually already implemented, but it has to be tested..)
 - background task : increase software maturity and reliability
+
+## Versions :
+| Version                     |        Description                                   |
+|:---------------------------:|:----------------------------------------------------:|
+| V0.1                        | experimental version                                 |
+
 
 ## API
 ### 1/ Define the communication objects
@@ -61,7 +65,7 @@ KnxComObject KnxDevice::_comObjectsList[] =
 //             	adress,			                         DataPoint ID,						                flags			} ,
 /* Index 0  */ { G_ADDR(0,0,1) /* addr 0.0.1 */,		  KNX_DPT_1_001 /* 1.001 B1 DPT_Switch */ ,	          COM_OBJ_LOGIC_IN_INIT	} ,
 /* Index 1  */ { G_ADDR(0,0,2) /* addr 0.0.2 */,		  KNX_DPT_5_010 /* 5.010 U8 DPT_Value_1_Ucount */ ,	  COM_OBJ_SENSOR		} ,
-/* Index 2  */ { G_ADDR(0,0,0xA) /* addr 0.0.A */,        KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,		      0x30 /* C+R */		} ,
+/* Index 2  */ { G_ADDR(0,0,3) /* addr 0.0.3 */,        KNX_DPT_1_003 /* 1.003 B1 DPT_Enable*/ ,		      0x30 /* C+R */		} ,
 };
 ```
 ___
@@ -70,13 +74,13 @@ ___
 
 ### 2/ Start/Stop/Run the KNX device
 ___
-**`byte begin(HardwareSerial& serial, word physicalAddr);`**
+**`e_KnxDeviceStatus begin(HardwareSerial& serial, word physicalAddr);`**
 * **Description:**  Start the KNX Device. Place this function call in the setup() function of your Arduino sketch
 * **Parameters :** "serial" is the Hardware serial port connected to the TPUART. "physicalAddr" is the physical address of your device (use P_ADDR() function).
-* **Return value :** return KNX_DEVICE_ERROR (255) if begin() failed, else return KNX_DEVICE_OK
+* **Return value :** return KNX_DEVICE_ERROR (255) if begin() failed, else return KNX_DEVICE_OK (0)
 * **Example:** 
 ```
-Knx.begin(Serial, P_ADDR(1,1,0xAA)); // start a KnxDevice session with physical address "1.1.AA" on "Serial" UART
+Knx.begin(Serial, P_ADDR(1,1,1)); // start a KnxDevice session with physical address "1.1.1" on "Serial" UART
 ```
 
 ___
@@ -99,6 +103,8 @@ The API allows you to interact with objects that you have defined : you can read
 ___
 **`void knxEvents(byte objectIndex);`**
 
+  _Notify object updates performed via the bus_
+
 * **Description:**  callback function that is called by the KnxDevice library every time a group object is updated by the bus. Define this function in your Arduino sketch.
 * **Parameters :** "objectIndex" is the index (in the list) of the object updated by the bus
 * **Example:**
@@ -107,11 +113,11 @@ ___
 void knxEvents(byte index) {
   switch (index)
   {
-    case 0 : // object index 0 has been updated
+    case 0 : // we arrive here when object index 0 has been updated
       // code to treat index 0 object update
       break;
 
-    case 1 : // object index 0 has been updaed
+    case 1 : // we arrive here when object index 1 has been updaed
       // code to treat index 1 object update
       break;
 
@@ -127,25 +133,112 @@ void knxEvents(byte index) {
 ___
 **`byte Knx.read(byte objectIndex);`**
 
-* **Description:** Get the current value of a group object. This function is relevant for _short_ objects only.
+  _Quick method to get the value of a short object_
+
+* **Description:** Get the current value of a short group object. This function is relevant for _short_ objects only, see table below. The returned value will be hazardous in case of use with _long_ objects.
 * **Parameters:** "objectIndex" is the index (in the list) of the object to be read.
 * **Return:** the current value of the object.
-* **Example:** ```Knx.read(0); // return the value of the 1st object in the list```
+* **Example:** ```Knx.read(0); // return index 0 object value```
+
+| supported KNX DPT formats   |         Remark                                       |
+|:---------------------------:|:----------------------------------------------------:|
+| KNX_DPT_FORMAT_B1           |                                                      |
+| KNX_DPT_FORMAT_B2           |                                                      |
+| KNX_DPT_FORMAT_B1U3         | bit fields to be computed by user application        |
+| KNX_DPT_FORMAT_A8           |                                                      |
+| KNX_DPT_FORMAT_U8           |                                                      |
+| KNX_DPT_FORMAT_V8           |                                                      |
+| KNX_DPT_FORMAT_B5N3         | bit fields to be computed by user application        |
 
 ___
-**`void Knx.write(byte objectIndex, byte byteValue);`**
+**`e_KnxDeviceStatus Knx.read(byte objectIndex, <any standard C type>& returnedValue);`**
 
-* **Description:** update the value of a group object. This function is relevant for _short_ objects only (the function has no effect on _long_ objects)
-In case the object has communication and transmit flags set, then a telegram is emitted on the EIB bus, thus the new value is propagated to the other devices.
-* **Parameters:** "objectIndex" is the index (in the list) of the object to be updated. "byteValue" is the new value.
-* **Example:** ```Knx.write(0,1); // the object with index 0 gets value 1.```
+  _Read an usual format com object_
 
+* **Description:** Get the current value of a group object. This function is relevant for objects with usual format, see table below.
+* **Parameters:** "objectIndex" is the index (in the list) of the object to be read. "returnedValue" is the read com object value.
+* **Return:** KNX_DEVICE_OK (0) when everything went well, KNX_DEVICE_NOT_IMPLEMENTED (254) in case of F32 conversion, KNX_DEVICE_ERROR (255) in case of unsupported group object format.
+* **Examples:** 
+```
+byte i; Knx.read(0,i); // read index 0 object (short object)
+unsigned int j; Knx.read(1,j); // read index 1 object (U16 format)
+int k; Knx.read(2,k); // read index 2 object (V16 format)
+unsigned long l; Knx.read(3,l); // read index 3 object (U32 format)
+long m; Knx.read(4,m); // read index 4 object (V32 format)
+float n; Knx.read(5,n); // read index 5 object (F16/F32 format)
+```
+
+| supported KNX DPT formats   |         Remark                                       |
+|:---------------------------:|:----------------------------------------------------:|
+| KNX_DPT_FORMAT_B1           |                                                      |
+| KNX_DPT_FORMAT_B2           |                                                      |
+| KNX_DPT_FORMAT_B1U3         | bit fields to be computed by user application        |
+| KNX_DPT_FORMAT_A8           |                                                      |
+| KNX_DPT_FORMAT_U8           |                                                      |
+| KNX_DPT_FORMAT_V8           |                                                      |
+| KNX_DPT_FORMAT_B5N3         | bit fields to be computed by user application        |
+| KNX_DPT_FORMAT_U16          |                                                      |
+| KNX_DPT_FORMAT_V16          |                                                      |
+| KNX_DPT_FORMAT_F16          |                                                      |
+| KNX_DPT_FORMAT_U32          |                                                      |
+| KNX_DPT_FORMAT_V32          |                                                      |
+| KNX_DPT_FORMAT_F32          | **!!not yet implemented!!**                          |
+
+___
+**`e_KnxDeviceStatus Knx.read(byte objectIndex, byte returnedValue[]);`**
+
+  _Read ANY format com object (advised to advanced users only)_
+
+* **Description:** read the value of a group object. This function supports ALL the DPT formats, the returned value has a rough DPT format.
+___
+**`e_KnxDeviceStatus Knx.write(byte objectIndex, <any standard C type> value);`**
+
+  _Update any usual format com object_
+
+* **Description:** update the value of a group object. This function is relevant for objects with usual format, see table below.
+In case the object has COMMUNICATION and TRANSMIT flags set, then a telegram is emitted on the EIB bus, thus the new value is propagated to the other devices.
+* **Parameters:** "objectIndex" is the index (in the list) of the object to be updated. "value" is the new value. value can be any standard C type (uchar, char, uint, int, ulong, long, float types).
+* **Return:** KNX_DEVICE_OK (0) when everything went well, KNX_DEVICE_NOT_IMPLEMENTED (254) in case of F32 conversion, KNX_DEVICE_ERROR (255) in case of unsupported group object format.
+* **Examples:**
+```
+byte i=100; Knx.write(0,i); // the object with index 0 gets value 100
+int j=-1000; Knx.write(1,j); // the object with index 1 gets value -1000
+float k=1234.56; Knx.write(2,k); // the object with index 3 gets value 1234.56
+```
+
+| supported KNX DPT formats   |         Remark                                       |
+|:---------------------------:|:----------------------------------------------------:|
+| KNX_DPT_FORMAT_B1           |                                                      |
+| KNX_DPT_FORMAT_B2           |                                                      |
+| KNX_DPT_FORMAT_B1U3         | bit fields to be computed by user application        |
+| KNX_DPT_FORMAT_A8           |                                                      |
+| KNX_DPT_FORMAT_U8           |                                                      |
+| KNX_DPT_FORMAT_V8           |                                                      |
+| KNX_DPT_FORMAT_B5N3         | bit fields to be computed by user application        |
+| KNX_DPT_FORMAT_U16          |                                                      |
+| KNX_DPT_FORMAT_V16          |                                                      |
+| KNX_DPT_FORMAT_F16          |                                                      |
+| KNX_DPT_FORMAT_U32          |                                                      |
+| KNX_DPT_FORMAT_V32          |                                                      |
+| KNX_DPT_FORMAT_F32          | **!!not yet implemented!!**                          |
+
+
+___
+**`e_KnxDeviceStatus Knx.write(byte objectIndex, byte value[]);`**
+
+  _Update ANY format com object (advised to advanced users only)_
+
+* **Description:** update the value of a group object. This function supports ALL the DPT formats, but a rough DPT format value (previously computed by user application) shall be provided.
 ___
 **`void Knx.update(byte objectIndex);`**
 
-* **Description:** request the group object to be updated with the value from the bus. Note that this function is _asynchroneous_, the update completion is notified by the knxEvents() callback. This function is relevant only for objects with 
+  _Request the local object value to be updated via the bus_
+
+* **Description:** request the (local) group object value to be updated with the value from the bus. Note that this function is _asynchroneous_, the update completion is notified by the knxEvents() callback. This function is relevant only for objects with UPDATE and TRANSMIT flags set.
 * **Parameters:** "objectIndex" is the index (in the list) of the object to be updated. 
 * **Example:** ```Knx.update(0); // request the update of the object with index 0.```
 
 ___
+
+
 

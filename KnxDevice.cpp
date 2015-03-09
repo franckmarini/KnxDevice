@@ -53,11 +53,12 @@ KnxDevice::KnxDevice()
 // Start the KNX Device
 // return KNX_DEVICE_ERROR (255) if begin() failed
 // else return KNX_DEVICE_OK
-byte KnxDevice::begin(HardwareSerial& serial, word physicalAddr)
+e_KnxDeviceStatus KnxDevice::begin(HardwareSerial& serial, word physicalAddr)
 {
   _tpuart = new KnxTpUart(serial ,physicalAddr, NORMAL);
   _rxTelegram = &_tpuart->GetReceivedTelegram();
-  delay(10000); // delay 10s. Workaround for init issue in case the Arduino is powered by the bus
+  // delay(10000); // Workaround for init issue with bus-powered arduino
+                   // the issue is reproduced on one (faulty?) TPUART device only, so remove it for the moment.
   if(_tpuart->Reset()!= KNX_TPUART_OK)
   {
     delete(_tpuart);
@@ -173,7 +174,7 @@ word nowTimeMillis, nowTimeMicros;
           else
           {
             _comObjectsList[action.index].UpdateValue(action.valuePtr);
-            delete(action.valuePtr);
+            free(action.valuePtr);
           }
           // transmit the value through EIB network only if the Com Object has transmit attribute
           if ( (_comObjectsList[action.index].GetIndicator()) & KNX_COM_OBJ_T_INDICATOR)
@@ -203,55 +204,113 @@ word nowTimeMillis, nowTimeMicros;
 }
 
 
-// Read short value (<=1 byte) com object
+// Quick method to read a short (<=1 byte) com object
+// NB : The returned value will be hazardous in case of use with long objects
 byte KnxDevice::read(byte objectIndex)
 {
   return _comObjectsList[objectIndex].GetValue();
 }
 
 
-// Read long value (> 1 byte) com object
-void KnxDevice::read(byte objectIndex, byte returnedValue[])
+// Read an usual format com object
+// Supported DPT formats are short com object, U16, V16, U32, V32, F16 and F32 (not implemented yet)
+template <typename T>  e_KnxDeviceStatus KnxDevice::read(byte objectIndex, T& returnedValue)
+{
+  // Short com object case
+  if (_comObjectsList[objectIndex].GetLength()<=2)
+  {
+    returnedValue = (T) _comObjectsList[objectIndex].GetValue();
+    return KNX_DEVICE_OK;
+  }
+  else // long object case, let's see if we are able to translate the DPT value
+  {
+    byte dptValue[14]; // define temporary DPT value with max length
+    _comObjectsList[objectIndex].GetValue(dptValue);
+    return ConvertFromDpt(dptValue, returnedValue, pgm_read_byte(&KnxDPTIdToFormat[_comObjectsList[objectIndex].GetDptId()]));
+  }
+}
+
+template e_KnxDeviceStatus KnxDevice::read <unsigned char>(byte objectIndex, unsigned char& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <char>(byte objectIndex, char& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <unsigned int>(byte objectIndex, unsigned int& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <int>(byte objectIndex, int& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <unsigned long>(byte objectIndex, unsigned long& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <long>(byte objectIndex, long& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <float>(byte objectIndex, float& returnedValue);
+
+
+
+// Read any type of com object (DPT value provided as is)
+e_KnxDeviceStatus KnxDevice::read(byte objectIndex, byte returnedValue[])
 {
   _comObjectsList[objectIndex].GetValue(returnedValue);
+  return KNX_DEVICE_OK;
 }
 
 
-// Write short value (<=1 byte) value com object
+// Update an usual format com object
+// Supported DPT types are short com object, U16, V16, U32, V32, F16 and F32
 // The Com Object value is updated locally
 // And a telegram is sent on the EIB bus if the com object has communication & transmit attributes
-void KnxDevice::write(byte objectIndex, const byte byteValue)
+template <typename T>  e_KnxDeviceStatus KnxDevice::write(byte objectIndex, T value)
+{
+  type_tx_action action;
+  byte *destValue;
+  byte length = _comObjectsList[objectIndex].GetLength();
+  
+  if (length <= 2 ) action.byteValue = (byte) value; // short object case
+  else
+  { // long object case, let's try to translate value to the com object DPT
+    destValue = (byte *) malloc(length-1); // allocate the memory for DPT
+    e_KnxDeviceStatus status = ConvertToDpt(value, destValue, pgm_read_byte(&KnxDPTIdToFormat[_comObjectsList[objectIndex].GetDptId()]));
+    if (status) // translation error
+    { 
+      free(destValue);
+      return status; // we cannot convert, we stop here
+    }
+    else  action.valuePtr = destValue;
+  }    
+  // add WRITE action in the TX action queue
+  action.command = EIB_WRITE_REQUEST;
+  action.index = objectIndex;
+  _txActionList.Append(action);
+  return KNX_DEVICE_OK;
+}
+
+
+template e_KnxDeviceStatus KnxDevice::write <unsigned char>(byte objectIndex, unsigned char value);
+template e_KnxDeviceStatus KnxDevice::write <char>(byte objectIndex, char value);
+template e_KnxDeviceStatus KnxDevice::write <unsigned int>(byte objectIndex, unsigned int value);
+template e_KnxDeviceStatus KnxDevice::write <int>(byte objectIndex, int value);
+template e_KnxDeviceStatus KnxDevice::write <unsigned long>(byte objectIndex, unsigned long value);
+template e_KnxDeviceStatus KnxDevice::write <long>(byte objectIndex, long value);
+template e_KnxDeviceStatus KnxDevice::write <float>(byte objectIndex, float value);
+
+
+// Update any type of com object (rough DPT value shall be provided)
+// The Com Object value is updated locally
+// And a telegram is sent on the EIB bus if the com object has communication & transmit attributes
+e_KnxDeviceStatus KnxDevice::write(byte objectIndex, byte valuePtr[])
 {
 type_tx_action action;
-  //step 1 : check that Com Object payload length is less or equals 1 byte
-  if (_comObjectsList[objectIndex].GetLength()<=2)
+byte *dptValue;
+byte length = _comObjectsList[objectIndex].GetLength();
+
+  if (length>2) // check we are in long object case
   { // add WRITE action in the TX action queue
     action.command = EIB_WRITE_REQUEST;
     action.index = objectIndex;
-    action.byteValue = byteValue;
+    dptValue = (byte *) malloc(length-1); // allocate the memory for long value
+    for (byte i=0; i<length-1; i++) dptValue[i] = valuePtr[i]; // copy value
+    action.valuePtr = (byte *) dptValue;
     _txActionList.Append(action);
+    return KNX_DEVICE_OK;
   }
+  return KNX_DEVICE_ERROR;
 }
 
 
-// Write long value (> 1 byte) com object
-// The Com Object value is updated locally
-// And a telegram is sent on the EIB bus if the com object has communication & transmit attributes
-void KnxDevice::write(byte objectIndex, const byte valuePtr[])
-{
-type_tx_action action;
-  //step 1 : check that Com Object payload length is more than 2 bytes
-  if (_comObjectsList[objectIndex].GetLength()>2)
-  { // add WRITE action in the TX action queue
-    action.command = EIB_WRITE_REQUEST;
-    action.index = objectIndex;
-    action.valuePtr = (byte *) valuePtr;
-    _txActionList.Append(action);
-  }
-}
-
-
-// Com Object Update request
+// Com Object EIB Bus Update request
 // Request the local object to be updated with the value from the bus
 // NB : the function is asynchroneous, the update completion is notified by the knxEvents() callback
 void KnxDevice::update(byte objectIndex)
@@ -356,6 +415,131 @@ void KnxDevice::TxTelegramAck(e_TpUartTxAck value)
   }
 #endif // KNXDevice_DEBUG
 } 
+
+
+// Functions to convert a standard C type to a DPT format
+// NB : only the usual DPT formats are supported (U16, V16, U32, V32, F16 and F32 (not yet implemented)
+template <typename T> e_KnxDeviceStatus ConvertFromDpt(const byte dptOriginValue[], T& resultValue, byte dptFormat)
+{
+  switch (dptFormat)
+  {
+    case KNX_DPT_FORMAT_U16:
+    case KNX_DPT_FORMAT_V16:
+      resultValue = (T)((unsigned int)dptOriginValue[0] << 8);
+      resultValue += (T)(dptOriginValue[1]);
+      return KNX_DEVICE_OK;
+    break;
+
+    case KNX_DPT_FORMAT_U32:
+    case KNX_DPT_FORMAT_V32:
+      resultValue = (T)((unsigned long)dptOriginValue[0] << 24);
+      resultValue += (T)((unsigned long)dptOriginValue[1] << 16);
+      resultValue += (T)((unsigned long)dptOriginValue[2] << 8);
+      resultValue += (T)(dptOriginValue[3]);
+      return KNX_DEVICE_OK;
+    break;
+
+    case KNX_DPT_FORMAT_F16 :
+    {
+      // Get the DPT sign, mantissa and exponent
+      int signMultiplier = (dptOriginValue[0] & 0x80) ? -1 : 1;
+      word absoluteMantissa = dptOriginValue[1] + ((dptOriginValue[0]&0x07)<<8);
+      if (signMultiplier == -1) 
+      { // Calculate absolute mantissa value in case of negative mantissa
+        // Abs = 2's complement + 1
+        absoluteMantissa = ((~absoluteMantissa)& 0x07FF ) + 1;
+      }
+      byte exponent = (dptOriginValue[0]&0x78)>>3;
+      resultValue = (T)(0.01 * ((long)absoluteMantissa << exponent) * signMultiplier);
+      return KNX_DEVICE_OK;
+    }
+    break;
+
+    case KNX_DPT_FORMAT_F32 :
+      return KNX_DEVICE_NOT_IMPLEMENTED;
+    break;
+
+    default : KNX_DEVICE_ERROR;
+  }
+}
+
+template e_KnxDeviceStatus ConvertFromDpt <unsigned char>(const byte dptOriginValue[], unsigned char&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <char>(const byte dptOriginValue[], char&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <unsigned int>(const byte dptOriginValue[], unsigned int&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <int>(const byte dptOriginValue[], int&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <unsigned long>(const byte dptOriginValue[], unsigned long&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <long>(const byte dptOriginValue[], long&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <float>(const byte dptOriginValue[], float&, byte dptFormat);
+
+
+// Functions to convert a standard C type to a DPT format
+// NB : only the usual DPT formats are supported (U16, V16, U32, V32, F16 and F32 (not yet implemented)
+template <typename T> e_KnxDeviceStatus ConvertToDpt(T originValue, byte dptDestValue[], byte dptFormat)
+{
+  switch (dptFormat)
+  {
+    case KNX_DPT_FORMAT_U16:
+    case KNX_DPT_FORMAT_V16:
+      dptDestValue[0] = (byte)((unsigned int)originValue>>8);
+      dptDestValue[1] = (byte)(originValue);
+      return KNX_DEVICE_OK;
+    break;
+
+    case KNX_DPT_FORMAT_U32:
+    case KNX_DPT_FORMAT_V32:
+      dptDestValue[0] = (byte)((unsigned long)originValue>>24);
+      dptDestValue[1] = (byte)((unsigned long)originValue>>16);
+      dptDestValue[2] = (byte)((unsigned long)originValue>>8);
+      dptDestValue[3] = (byte)(originValue);
+      return KNX_DEVICE_OK;
+    break;
+
+    case KNX_DPT_FORMAT_F16 :
+    {
+      long longValuex100 = (long)(100.0 * originValue);
+      boolean negativeSign = (longValuex100 & 0x80000000)? true : false;
+      byte exponent = 0;
+      byte round = 0;
+
+      if (negativeSign)
+      {
+        while(longValuex100 < (long)(-2048)) 
+        {
+           exponent++; round = (byte)(longValuex100) & 1 ; longValuex100>>=1; longValuex100|=0x80000000;
+        }
+      }
+      else
+      {
+        while(longValuex100 > (long)(2047)) 
+        {
+          exponent++; round = (byte)(longValuex100) & 1 ; longValuex100>>=1;
+        }
+
+      }
+      if (round) longValuex100++;
+      dptDestValue[1] = (byte)longValuex100;
+      dptDestValue[0] = (byte)(longValuex100>>8) & 0x7 ;
+      dptDestValue[0] += exponent<<3;
+      if (negativeSign) dptDestValue[0] += 0x80;
+      return KNX_DEVICE_OK;
+    }
+    break;
+
+    case KNX_DPT_FORMAT_F32 :
+      return KNX_DEVICE_NOT_IMPLEMENTED;
+    break;
+
+    default : KNX_DEVICE_ERROR;
+  }
+}
+
+template e_KnxDeviceStatus ConvertToDpt <unsigned char>(unsigned char, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <char>(char, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <unsigned int>(unsigned int, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <int>(int, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <unsigned long>(unsigned long, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <long>(long, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <float>(float, byte dptDestValue[], byte dptFormat);
 
 // EOF
 

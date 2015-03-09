@@ -34,6 +34,13 @@
 // DEBUG :
 // #define KNXDEVICE_DEBUG_INFO   // Uncomment to activate info traces
 
+// Values returned by the KnxDevice member functions :
+enum e_KnxDeviceStatus {
+  KNX_DEVICE_OK = 0,
+  KNX_DEVICE_NOT_IMPLEMENTED = 254,
+  KNX_DEVICE_ERROR = 255
+};
+
 // Macro functions for conversion of physical and 2/3 level group addresses
 inline word P_ADDR(byte area, byte line, byte busdevice)
 { return (word) ( ((area&0xF)<<12) + ((line&0xF)<<8) + busdevice ); }
@@ -43,11 +50,6 @@ inline word G_ADDR(byte maingrp, byte midgrp, byte subgrp)
 
 inline word G_ADDR(byte maingrp, byte subgrp)
 { return (word) ( ((maingrp&0x1F)<<11) + subgrp ); }
-
-
-// Values returned by the KnxDevice member functions :
-#define KNX_DEVICE_OK                            0
-#define KNX_DEVICE_ERROR                       255
 
 #define ACTIONS_QUEUE_SIZE 16
 
@@ -74,8 +76,7 @@ struct struct_tx_action{
       byte byteValue;
       byte notUsed;
     };
-    // Field used in case of long value (value width > 1 byte), space is allocated dynamically
-    byte *valuePtr;
+    byte *valuePtr; // Field used in case of long value (width > 1 byte), space is allocated dynamically
   };
 };// type_tx_action;
 
@@ -85,6 +86,16 @@ typedef struct struct_tx_action type_tx_action;
 // Callback function to catch and treat KNX events
 // The definition shall be provided by the end-user
 extern void knxEvents(byte);
+
+
+// --------------- Definition of the functions for DPT translation --------------------
+// Functions to convert a DPT format to a standard C type
+// NB : only the usual DPT formats are supported (U16, V16, U32, V32, F16 and F32)
+template <typename T> e_KnxDeviceStatus ConvertFromDpt(const byte dpt[], T& result, byte dptFormat);
+
+// Functions to convert a standard C type to a DPT format
+// NB : only the usual DPT formats are supported (U16, V16, U32, V32, F16 and F32)
+template <typename T> e_KnxDeviceStatus ConvertToDpt(T value, byte dpt[], byte dptFormat);
 
 
 class KnxDevice {
@@ -119,7 +130,7 @@ class KnxDevice {
     // Start the KNX Device
     // return KNX_DEVICE_ERROR (255) if begin() failed
     // else return KNX_DEVICE_OK
-    byte begin(HardwareSerial& serial, word physicalAddr);
+    e_KnxDeviceStatus begin(HardwareSerial& serial, word physicalAddr);
 
     // Stop the KNX Device
     void end();
@@ -128,23 +139,30 @@ class KnxDevice {
     // This function shall be called in the "loop()" Arduino function
     void task(void);
 
-    // Read short value (<=1 byte) com object
-    byte read(byte objectIndex);
+    // Quick method to read a short (<=1 byte) com object
+    // NB : The returned value will be hazardous in case of use with long objects
+    byte read(byte objectIndex);  
 
-    // Read long value (> 1 byte) com object
-    void read(byte objectIndex, byte returnedValue[]);
+    // Read an usual format com object
+    // Supported DPT formats are short com object, U16, V16, U32, V32, F16 and F32
+    template <typename T>  e_KnxDeviceStatus read(byte objectIndex, T& returnedValue);
 
-    // Write short value (<=1 byte) value com object
-    // The Com Object value is updated locally
-    // And a telegram is sent on the EIB bus if the com object has communication & transmit attributes
-    void write(byte objectIndex, const byte byteValue); 
+    // Read any type of com object (DPT value provided as is)
+    e_KnxDeviceStatus read(byte objectIndex, byte returnedValue[]);
 
-    // Write long value (> 1 byte) com object
-    // The Com Object value is updated locally
-    // And a telegram is sent on the EIB bus if the com object has communication & transmit attributes
-    void write(byte objectIndex, const byte valuePtr[]);
+    // Update com object functions :
+    // For all the update functions, the com object value is updated locally
+    // and a telegram is sent on the EIB bus if the object has both COMMUNICATION & TRANSMIT attributes set
 
-    // Com Object Update request
+    // Update an usual format com object
+    // Supported DPT types are short com object, U16, V16, U32, V32, F16 and F32
+    template <typename T>  e_KnxDeviceStatus write(byte objectIndex, T value);
+
+    // Update any type of com object (rough DPT value shall be provided)
+    e_KnxDeviceStatus write(byte objectIndex, byte valuePtr[]);
+    
+
+    // Com Object EIB Bus Update request
     // Request the local object to be updated with the value from the bus
     // NB : the function is asynchroneous, the update completion is notified by the knxEvents() callback
     void update(byte objectIndex);
