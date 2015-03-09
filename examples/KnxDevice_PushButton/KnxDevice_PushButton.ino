@@ -33,7 +33,7 @@ void knxEvents(byte index) {}
 
 void setup(){
   attachInterrupt(0 /* int. 0 on pin 2 */, ButtonReleased, FALLING);
-  Knx.begin(Serial, P_ADDR(1,1,0xAA)); // start a KnxDevice session with physical address 1.1.AA on Serial UART
+  Knx.begin(Serial, P_ADDR(1,1,1)); // start a KnxDevice session with physical address 1.1.1 on Serial UART
 }
 
 
