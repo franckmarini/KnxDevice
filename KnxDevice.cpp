@@ -238,6 +238,7 @@ template e_KnxDeviceStatus KnxDevice::read <int>(byte objectIndex, int& returned
 template e_KnxDeviceStatus KnxDevice::read <unsigned long>(byte objectIndex, unsigned long& returnedValue);
 template e_KnxDeviceStatus KnxDevice::read <long>(byte objectIndex, long& returnedValue);
 template e_KnxDeviceStatus KnxDevice::read <float>(byte objectIndex, float& returnedValue);
+template e_KnxDeviceStatus KnxDevice::read <double>(byte objectIndex, double& returnedValue);
 
 
 
@@ -286,6 +287,7 @@ template e_KnxDeviceStatus KnxDevice::write <int>(byte objectIndex, int value);
 template e_KnxDeviceStatus KnxDevice::write <unsigned long>(byte objectIndex, unsigned long value);
 template e_KnxDeviceStatus KnxDevice::write <long>(byte objectIndex, long value);
 template e_KnxDeviceStatus KnxDevice::write <float>(byte objectIndex, float value);
+template e_KnxDeviceStatus KnxDevice::write <double>(byte objectIndex, double value);
 
 
 // Update any type of com object (rough DPT value shall be provided)
@@ -471,6 +473,7 @@ template e_KnxDeviceStatus ConvertFromDpt <int>(const byte dptOriginValue[], int
 template e_KnxDeviceStatus ConvertFromDpt <unsigned long>(const byte dptOriginValue[], unsigned long&, byte dptFormat);
 template e_KnxDeviceStatus ConvertFromDpt <long>(const byte dptOriginValue[], long&, byte dptFormat);
 template e_KnxDeviceStatus ConvertFromDpt <float>(const byte dptOriginValue[], float&, byte dptFormat);
+template e_KnxDeviceStatus ConvertFromDpt <double>(const byte dptOriginValue[], double&, byte dptFormat);
 
 
 // Functions to convert a standard C type to a DPT format
@@ -541,6 +544,7 @@ template e_KnxDeviceStatus ConvertToDpt <int>(int, byte dptDestValue[], byte dpt
 template e_KnxDeviceStatus ConvertToDpt <unsigned long>(unsigned long, byte dptDestValue[], byte dptFormat);
 template e_KnxDeviceStatus ConvertToDpt <long>(long, byte dptDestValue[], byte dptFormat);
 template e_KnxDeviceStatus ConvertToDpt <float>(float, byte dptDestValue[], byte dptFormat);
+template e_KnxDeviceStatus ConvertToDpt <double>(double, byte dptDestValue[], byte dptFormat);
 
 // EOF
 

@@ -48,6 +48,7 @@ This library is still under developpement. The next actions in the pipe are :
 |:---------------------------:|:----------------------------------------------------:|
 | V0.1                        | experimental version                                 |
 | V0.2                        | read/write functions : support of boolean type added |
+| V0.3                        | read/write functions : support of double type added  |
 
 
 ## API
@@ -157,7 +158,7 @@ ___
   _Read an usual format com object_
 
 * **Description:** Get the current value of a group object. This function is relevant for objects with usual format, see table below.
-* **Parameters:** "objectIndex" is the index (in the list) of the object to be read. "returnedValue" is the read com object value. "returnedValue" can be any standard C type (boolean, uchar, char, uint, int, ulong, long, float types).
+* **Parameters:** "objectIndex" is the index (in the list) of the object to be read. "returnedValue" is the read com object value. "returnedValue" can be any standard C type (boolean, uchar, char, uint, int, ulong, long, float, double types).
 * **Return:** KNX_DEVICE_OK (0) when everything went well, KNX_DEVICE_NOT_IMPLEMENTED (254) in case of F32 conversion, KNX_DEVICE_ERROR (255) in case of unsupported group object format.
 * **Examples:** 
 ```
@@ -198,7 +199,7 @@ ___
 
 * **Description:** update the value of a group object. This function is relevant for objects with usual format, see table below.
 In case the object has COMMUNICATION and TRANSMIT flags set, then a telegram is emitted on the EIB bus, thus the new value is propagated to the other devices.
-* **Parameters:** "objectIndex" is the index (in the list) of the object to be updated. "value" is the new value. value can be any standard C type (boolean, uchar, char, uint, int, ulong, long, float types).
+* **Parameters:** "objectIndex" is the index (in the list) of the object to be updated. "value" is the new value. value can be any standard C type (boolean, uchar, char, uint, int, ulong, long, float, double types).
 * **Return:** KNX_DEVICE_OK (0) when everything went well, KNX_DEVICE_NOT_IMPLEMENTED (254) in case of F32 conversion, KNX_DEVICE_ERROR (255) in case of unsupported group object format.
 * **Examples:**
 ```
