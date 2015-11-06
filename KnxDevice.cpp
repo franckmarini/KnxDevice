@@ -19,7 +19,7 @@
 // File : KnxDevice.cpp
 // Author : Franck Marini
 // Description : KnxDevice Abstraction Layer
-// Module dependencies : HardwareSerial, KnxTelegram, KnxComObject, KnxTpUart, RingBuffer
+// Module dependencies : HardwareSerial, KnxTelegram, KnxComObject, KnxTpUart, ActionRingBuffer
 
 #include "KnxDevice.h"
 
@@ -39,7 +39,7 @@ KnxDevice::KnxDevice()
 {
   _state = INIT;
   _tpuart = NULL;
-  _txActionList= RingBuffer<type_tx_action, ACTIONS_QUEUE_SIZE>();
+  _txActionList= ActionRingBuffer<type_tx_action, ACTIONS_QUEUE_SIZE>();
   _initCompleted = false;
   _initIndex = 0;
   _rxTelegram = NULL;

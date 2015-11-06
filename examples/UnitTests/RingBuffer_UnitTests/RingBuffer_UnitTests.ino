@@ -1,4 +1,4 @@
-#include <KnxDevice.h> // /!\ Turn "RINGBUFFER_STAT" define on in RingBuffer.h to allow statistics info
+#include <KnxDevice.h> // /!\ Turn "ACTIONRINGBUFFER_STAT" define on in ActionRingBuffer.h to allow statistics info
 #include <Cli.h> // command line interpreter lib available at https://github.com/franckmarini/Cli
 
 Cli cli = Cli(Serial);
