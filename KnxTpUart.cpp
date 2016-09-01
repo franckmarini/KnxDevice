@@ -87,6 +87,8 @@ byte attempts = 10;
 
   // CONFIGURATION OF THE ARDUINO USART WITH CORRECT FRAME FORMAT (19200, 8 bits, parity even, 1 stop bit)
   _serial.begin(19200,SERIAL_8E1);
+  //_serial.begin(19200);
+  //UCSR1C = UCSR1C | B00100000; // Even Parity
   
   while(attempts--)
   { // we send a RESET REQUEST and wait for the reset indication answer

@@ -17,31 +17,31 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// File : RingBuffer.h
+// File : ActionRingBuffer.h
 // Author : Franck Marini
 // Description : Implementation of a generic elements ring buffer
 // Module dependencies : none
 
-#ifndef RINGBUFFER_H
-#define RINGBUFFER_H
+#ifndef ACTIONRINGBUFFER_H
+#define ACTIONRINGBUFFER_H
 
 #include "Arduino.h"
 
 // !!!!!!!!!!!!!!! FLAG OPTIONS !!!!!!!!!!!!!!!!!
-// #define RINGBUFFER_STAT // To be uncommented when doing Statistics
+// #define ACTIONRINGBUFFER_STAT // To be uncommented when doing Statistics
 
 
 // The type of the contained elements and the ring buffer size are defined at compile time (template)
 // In case of buffer full, a new appended data overwrites the oldest one
 
 template<typename T, word size>
-class RingBuffer {
+class ActionRingBuffer {
      byte _head;
      byte _tail;
      T _buffer[size]; // elements buffer
      byte _size;
      byte _elementsCurrentNb;
-#ifdef RINGBUFFER_STAT
+#ifdef ACTIONRINGBUFFER_STAT
      byte _elementsMaxNb;
      word _lostElementsNb;
 #endif
@@ -49,13 +49,13 @@ class RingBuffer {
   public : 
 
     // Constructor
-    RingBuffer()
+    ActionRingBuffer()
     {
       _head = 0;
       _tail = 0;
       _elementsCurrentNb = 0;
       _size = size;
-    #ifdef RINGBUFFER_STAT
+    #ifdef ACTIONRINGBUFFER_STAT
       _elementsMaxNb = 0; // MAX nb of elements
       _lostElementsNb = 0;    // nb of lost elements
     #endif
@@ -69,14 +69,14 @@ class RingBuffer {
       if (_elementsCurrentNb == _size)
       { // buffer is already full, we overwrite the oldest data
         IncrementHead();
-    #ifdef RINGBUFFER_STAT
+    #ifdef ACTIONRINGBUFFER_STAT
         _lostElementsNb++;
     #endif
       }
       else
       { // we still have some free place
         _elementsCurrentNb++;
-    #ifdef RINGBUFFER_STAT
+    #ifdef ACTIONRINGBUFFER_STAT
         if (_elementsCurrentNb > _elementsMaxNb) _elementsMaxNb++;
     #endif
       }
@@ -101,7 +101,7 @@ class RingBuffer {
     byte ElementsNb(void) const { return _elementsCurrentNb; }
 
 
-    #ifdef RINGBUFFER_STAT
+    #ifdef ACTIONRINGBUFFER_STAT
     // Return Stat information
     void Info(String& str)
     {
@@ -118,4 +118,4 @@ class RingBuffer {
     void IncrementTail(void) { _tail = (_tail + 1) % _size; }
 };
 
-#endif // RINGBUFFER_H
+#endif // ACTIONRINGBUFFER_H

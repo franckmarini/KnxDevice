@@ -19,7 +19,7 @@
 // File : KnxDevice.h
 // Author : Franck Marini
 // Description : KnxDevice Abstraction Layer
-// Module dependencies : HardwareSerial, KnxTelegram, KnxComObject, KnxTpUart, RingBuffer
+// Module dependencies : HardwareSerial, KnxTelegram, KnxComObject, KnxTpUart, ActionRingBuffer
 
 #ifndef KNXDEVICE_H
 #define KNXDEVICE_H
@@ -27,7 +27,7 @@
 #include "Arduino.h"
 #include "KnxTelegram.h"
 #include "KnxComObject.h"
-#include "RingBuffer.h"
+#include "ActionRingBuffer.h"
 #include "KnxTpUart.h"
 
 // !!!!!!!!!!!!!!! FLAG OPTIONS !!!!!!!!!!!!!!!!!
@@ -105,7 +105,7 @@ class KnxDevice {
                                                     // The value shall be provided by the end-user
     e_KnxDeviceState _state;                        // Current KnxDevice state
     KnxTpUart *_tpuart;                             // TPUART associated to the KNX Device
-    RingBuffer<type_tx_action, ACTIONS_QUEUE_SIZE> _txActionList; // Queue of transmit actions to be performed
+    ActionRingBuffer<type_tx_action, ACTIONS_QUEUE_SIZE> _txActionList; // Queue of transmit actions to be performed
     boolean _initCompleted;                         // True when all the Com Object with Init attr have been initialized
     byte _initIndex;                                // Index to the last initiated object
     word _lastInitTimeMillis;                       // Time (in msec) of the last init (read) request on the bus
