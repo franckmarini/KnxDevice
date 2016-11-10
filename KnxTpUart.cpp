@@ -1,7 +1,7 @@
 //    This file is part of Arduino Knx Bus Device library.
 
 //    The Arduino Knx Bus Device library allows to turn Arduino into "self-made" KNX bus device.
-//    Copyright (C) 2014 2015 Franck MARINI (fm@liwan.fr)
+//    Copyright (C) 2014 2015 2016 Franck MARINI (fm@liwan.fr)
 
 //    The Arduino Knx Bus Device library is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -66,9 +66,13 @@ KnxTpUart::~KnxTpUart()
   if ( (_rx.state > RX_RESET) || (_tx.state > TX_RESET) ) 
   {
     _serial.end();
+#if defined(KNXTPUART_DEBUG_INFO)
     DebugInfo("Destructor: connection closed, byebye\n");
+#endif
   }
+#if defined(KNXTPUART_DEBUG_INFO)
   else DebugInfo("Desctructor: byebye\n");
+#endif
 }
 
 
@@ -102,14 +106,18 @@ byte attempts = 10;
         if (_serial.read() == TPUART_RESET_INDICATION)
         {
           _rx.state = RX_INIT; _tx.state = TX_INIT;
+#if defined(KNXTPUART_DEBUG_INFO)
           DebugInfo("Reset successful\n");
+#endif
           return KNX_TPUART_OK;
         }
       }
     } // 1 sec ellapsed
   } // while(attempts--)
   _serial.end();
+#if defined(KNXTPUART_DEBUG_ERROR)
   DebugError("Reset failed, no answer from TPUART device\n");
+#endif
   return KNX_TPUART_ERROR;
 }
 
@@ -135,14 +143,18 @@ byte KnxTpUart::AttachComObjectsList(KnxComObject comObjectsList[], byte listSiz
   }
   if ((!comObjectsList) || (!listSize))
   {
+#if defined(KNXTPUART_DEBUG_INFO)
     DebugInfo("AttachComObjectsList : warning : empty object list!\n");
+#endif
     return  KNX_TPUART_OK;
   }
   // Count all the com objects with communication indicator
   for (byte i=0; i < listSize ; i++) if (IS_COM(i)) _assignedComObjectsNb++;
   if (!_assignedComObjectsNb)
   {
+#if defined(KNXTPUART_DEBUG_INFO)
     DebugInfo("AttachComObjectsList : warning : no object with com attribute in the list!\n");
+#endif
     return  KNX_TPUART_OK;    
   }
   // Deduct the duplicate addresses
@@ -157,7 +169,9 @@ byte KnxTpUart::AttachComObjectsList(KnxComObject comObjectsList[], byte listSiz
         else 
         {
           _assignedComObjectsNb--;
+#if defined(KNXTPUART_DEBUG_INFO)
           DebugInfo("AttachComObjectsList : warning : duplicate address found!\n");
+#endif
         }
       }
     }
@@ -180,7 +194,9 @@ byte KnxTpUart::AttachComObjectsList(KnxComObject comObjectsList[], byte listSiz
     minMin = foundMin + 1;
     foundMin = 0xFFFF;
   }
+#if defined(KNXTPUART_DEBUG_INFO)
   DebugInfo("AttachComObjectsList successful\n");
+#endif
   return KNX_TPUART_OK;
 }
 
@@ -198,11 +214,15 @@ byte KnxTpUart::Init(void)
   if (_mode == BUS_MONITOR)
   {
     _serial.write(TPUART_ACTIVATEBUSMON_REQ); // Send bus monitoring activation request
+#if defined(KNXTPUART_DEBUG_INFO)
     DebugInfo("Init : Monitoring mode started\n");
+#endif
   }
   else // NORMAL mode by default
   {
+#if defined(KNXTPUART_DEBUG_INFO)
     if (_comObjectsList == NULL)  DebugInfo("Init : warning : empty object list!\n");
+#endif
     if (_evtCallbackFct == NULL) return KNX_TPUART_ERROR_NULL_EVT_CALLBACK_FCT;
     if (_tx.ackFctPtr == NULL) return KNX_TPUART_ERROR_NULL_ACK_CALLBACK_FCT;
 
@@ -217,7 +237,9 @@ byte KnxTpUart::Init(void)
 
     _rx.state = RX_IDLE_WAITING_FOR_CTRL_FIELD;
     _tx.state = TX_IDLE;
+#if defined(KNXTPUART_DEBUG_INFO)
     DebugInfo("Init : Normal mode started\n");
+#endif
   }
   return KNX_TPUART_OK;
 }
@@ -318,7 +340,9 @@ static word lastByteRxTimeMicrosec;
               _tx.ackFctPtr(ACK_RESPONSE);
               _tx.state = TX_IDLE;
             }
+#if defined(KNXTPUART_DEBUG_ERROR)
             else DebugError("Rx: unexpected TPUART_DATA_CONFIRM_SUCCESS received!\n");
+#endif
           }
           // CASE OF TPUART_RESET NOTIFICATION
           else if (incomingByte == TPUART_RESET_INDICATION)
@@ -338,7 +362,9 @@ static word lastByteRxTimeMicrosec;
           {
             _evtCallbackFct(TPUART_EVENT_STATE_INDICATION); // Notify STATE INDICATION
             _stateIndication = incomingByte;
+#if defined(KNXTPUART_DEBUG_INFO)
             DebugInfo("Rx: State Indication Received\n");
+#endif
           }
           // CASE OF TPUART_DATA_CONFIRM_FAILED NOTIFICATION
           else if (incomingByte == TPUART_DATA_CONFIRM_FAILED) 
@@ -349,11 +375,15 @@ static word lastByteRxTimeMicrosec;
               _tx.ackFctPtr(NACK_RESPONSE);
               _tx.state = TX_IDLE; 
             }
+#if defined(KNXTPUART_DEBUG_ERROR)
             else DebugError("Rx: unexpected TPUART_DATA_CONFIRM_FAILED received!\n");
+#endif
           }
+#if defined(KNXTPUART_DEBUG_ERROR)
           // UNKNOWN CONTROL FIELD RECEIVED
           else if (incomingByte)
             DebugError("Rx: Unknown Control Field received\n");
+#endif
           // else ignore "0" value sent on Reset by TPUART prior to TPUART_RESET_INDICATION
           break;
 

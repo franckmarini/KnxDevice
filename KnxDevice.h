@@ -1,7 +1,7 @@
 //    This file is part of Arduino Knx Bus Device library.
 
 //    The Arduino Knx Bus Device library allows to turn Arduino into "self-made" KNX bus device.
-//    Copyright (C) 2014 2015 Franck MARINI (fm@liwan.fr)
+//    Copyright (C) 2014 2015 2016 Franck MARINI (fm@liwan.fr)
 
 //    The Arduino Knx Bus Device library is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -183,8 +183,10 @@ class KnxDevice {
     // Static TxTelegramAck() function called by the KnxTpUart layer (callback)
     static void TxTelegramAck(e_TpUartTxAck);
 
+#if defined(KNXDEVICE_DEBUG_INFO)
     // Inline Debug function (definition later in this file)
     void DebugInfo(const char[]) const;
+#endif
 };
 
 #if defined(KNXDEVICE_DEBUG_INFO)
@@ -193,12 +195,12 @@ inline void KnxDevice::SetDebugString(String *strPtr) {_debugStrPtr = strPtr;}
 #endif
 
 
+#if defined(KNXDEVICE_DEBUG_INFO)
 inline void KnxDevice::DebugInfo(const char comment[]) const
 {
-#if defined(KNXDEVICE_DEBUG_INFO)
 	if (_debugStrPtr != NULL) *_debugStrPtr += String(_debugInfoText) + String(comment);
-#endif
 }
+#endif
 
 // Reference to the KnxDevice unique instance
 extern KnxDevice& Knx;

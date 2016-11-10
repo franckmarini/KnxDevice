@@ -1,7 +1,7 @@
 //    This file is part of Arduino Knx Bus Device library.
 
 //    The Arduino Knx Bus Device library allows to turn Arduino into "self-made" KNX bus device.
-//    Copyright (C) 2014 2015 Franck MARINI (fm@liwan.fr)
+//    Copyright (C) 2014 2015 2016 Franck MARINI (fm@liwan.fr)
 
 //    The Arduino Knx Bus Device library is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -64,7 +64,9 @@ e_KnxDeviceStatus KnxDevice::begin(HardwareSerial& serial, word physicalAddr)
     delete(_tpuart);
     _tpuart = NULL;
     _rxTelegram = NULL;
+#if defined(KNXDEVICE_DEBUG_INFO)
     DebugInfo("Init Error!\n");
+#endif
     return KNX_DEVICE_ERROR;
   }
   _tpuart->AttachComObjectsList(_comObjectsList, _comObjectsNb);
@@ -72,9 +74,11 @@ e_KnxDeviceStatus KnxDevice::begin(HardwareSerial& serial, word physicalAddr)
   _tpuart->SetAckCallback(&KnxDevice::TxTelegramAck);
   _tpuart->Init();
   _state = IDLE;
+#if defined(KNXDEVICE_DEBUG_INFO)
   DebugInfo("Init successful\n");
+#endif
   _lastInitTimeMillis = millis();
-  _lastTXTimeMicros = _lastTXTimeMicros = micros();
+  _lastTXTimeMicros = micros();
 #if defined(KNXDEVICE_DEBUG_INFO)
    _nbOfInits = 0;
 #endif
@@ -350,7 +354,9 @@ byte targetedComObjIndex; // index of the Com Object targeted by the event
     switch(Knx._rxTelegram->GetCommand())
     {
       case KNX_COMMAND_VALUE_READ :
+#if defined(KNXDEVICE_DEBUG_INFO)
     	Knx.DebugInfo("READ req.\n");
+#endif
         // READ command coming from the bus
         // if the Com Object has read attribute, then add RESPONSE action in the TX action list
         if ( (_comObjectsList[targetedComObjIndex].GetIndicator()) & KNX_COM_OBJ_R_INDICATOR)
@@ -362,7 +368,9 @@ byte targetedComObjIndex; // index of the Com Object targeted by the event
         break;
 
       case KNX_COMMAND_VALUE_RESPONSE :
+#if defined(KNXDEVICE_DEBUG_INFO)
       	Knx.DebugInfo("RESP req.\n");
+#endif
         // RESPONSE command coming from EIB network, we update the value of the corresponding Com Object.
         // We 1st check that the corresponding Com Object has UPDATE attribute
         if((_comObjectsList[targetedComObjIndex].GetIndicator()) & KNX_COM_OBJ_U_INDICATOR)
@@ -375,7 +383,9 @@ byte targetedComObjIndex; // index of the Com Object targeted by the event
 
 
       case KNX_COMMAND_VALUE_WRITE :
+#if defined(KNXDEVICE_DEBUG_INFO)
     	Knx.DebugInfo("WRITE req.\n");
+#endif
         // WRITE command coming from EIB network, we update the value of the corresponding Com Object.
         // We 1st check that the corresponding Com Object has WRITE attribute
         if((_comObjectsList[targetedComObjIndex].GetIndicator()) & KNX_COM_OBJ_W_INDICATOR)
@@ -462,7 +472,9 @@ template <typename T> e_KnxDeviceStatus ConvertFromDpt(const byte dptOriginValue
       return KNX_DEVICE_NOT_IMPLEMENTED;
     break;
 
-    default : KNX_DEVICE_ERROR;
+    default :
+      return KNX_DEVICE_ERROR;
+    break;
   }
 }
 
@@ -533,7 +545,9 @@ template <typename T> e_KnxDeviceStatus ConvertToDpt(T originValue, byte dptDest
       return KNX_DEVICE_NOT_IMPLEMENTED;
     break;
 
-    default : KNX_DEVICE_ERROR;
+    default :
+      return KNX_DEVICE_ERROR;
+    break;
   }
 }
 

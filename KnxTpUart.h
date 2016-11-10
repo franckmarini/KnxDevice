@@ -1,7 +1,7 @@
 //    This file is part of Arduino Knx Bus Device library.
 
 //    The Arduino Knx Bus Device library allows to turn Arduino into "self-made" KNX bus device.
-//    Copyright (C) 2014 2015 Franck MARINI (fm@liwan.fr)
+//    Copyright (C) 2014 2015 2016 Franck MARINI (fm@liwan.fr)
 
 //    The Arduino Knx Bus Device library is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -214,8 +214,10 @@ static const char _debugErrorText[];
     // false when there's no activity or when the tpuart is not initialized
     boolean IsActive(void) const;
 
+#if defined(KNXTPUART_DEBUG_INFO) || defined(KNXTPUART_DEBUG_ERROR)
     // Set the string used for debug traces
     void SetDebugString(String *strPtr);
+#endif
 
   // Functions NOT INLINED
     // Reset the Arduino UART port and the TPUART device
@@ -269,9 +271,12 @@ static const char _debugErrorText[];
   private:
 
   // Private INLINED functions (see definitions later in this file)
+#if defined(KNXTPUART_DEBUG_INFO)
     void DebugInfo(const char[]) const;
-
+#endif
+#if defined(KNXTPUART_DEBUG_ERROR)
     void DebugError(const char[]) const;
+#endif
 
   // Private NOT INLINED functions 
     // Check if the target address points to an assigned com object (i.e. the target address equals a com object address)
@@ -317,28 +322,27 @@ inline boolean KnxTpUart::IsActive(void) const
 }
 
 
-
+#if defined(KNXTPUART_DEBUG_INFO) || defined(KNXTPUART_DEBUG_ERROR)
 inline void KnxTpUart::SetDebugString(String *strPtr)
 {
-#if defined(KNXTPUART_DEBUG_INFO) || defined(KNXTPUART_DEBUG_ERROR)
    _debugStrPtr = strPtr;
-#endif
 }
+#endif
 
 
+#if defined(KNXTPUART_DEBUG_INFO)
 inline void KnxTpUart::DebugInfo(const char comment[]) const
 {
-#if defined(KNXTPUART_DEBUG_INFO)
   if (_debugStrPtr != NULL) *_debugStrPtr += String(_debugInfoText) + String(comment);
-#endif
 }
+#endif
 
 
+#if defined(KNXTPUART_DEBUG_ERROR)
 inline void KnxTpUart::DebugError(const char comment[]) const
 {
-#if defined(KNXTPUART_DEBUG_ERROR)
   if (_debugStrPtr != NULL) *_debugStrPtr += String(_debugErrorText) + String(comment);
-#endif
 }
+#endif
 
 #endif // KNXTPUART_H

@@ -1,7 +1,7 @@
 //    This file is part of Arduino Knx Bus Device library.
 
 //    The Arduino Knx Bus Device library allows to turn Arduino into "self-made" KNX bus device.
-//    Copyright (C) 2014 2015 Franck MARINI (fm@liwan.fr)
+//    Copyright (C) 2014 2015 2016 Franck MARINI (fm@liwan.fr)
 
 //    The Arduino Knx Bus Device library is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
